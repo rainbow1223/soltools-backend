@@ -167,73 +167,73 @@ export async function createLP(
     const versionedLpMsg = new VersionedTransaction(newLpTxMsg);
     versionedLpMsg.sign(createLPSigners);
 
-    console.log("Create LP step 2!");
-    //Create buy token transaction
-    const buyerATA = getAssociatedTokenAddressSync(baseMint, buyerWallet.publicKey);
-    const buyInstructions: TransactionInstruction[] = [
-      SystemProgram.transfer({
-        fromPubkey: buyerWallet.publicKey,
-        toPubkey: devWallet.publicKey,
-        lamports: buyAmount,
-      }),
-      // Add compute budget program instructions to buy the token in here
-      ComputeBudgetProgram.setComputeUnitPrice({
-        microLamports: ENV_SETTINGS.COMPUTE_PRICE,
-      })
-    ];
+    // console.log("Create LP step 2!");
+    // //Create buy token transaction
+    // const buyerATA = getAssociatedTokenAddressSync(baseMint, buyerWallet.publicKey);
+    // const buyInstructions: TransactionInstruction[] = [
+    //   SystemProgram.transfer({
+    //     fromPubkey: buyerWallet.publicKey,
+    //     toPubkey: devWallet.publicKey,
+    //     lamports: buyAmount,
+    //   }),
+    //   // Add compute budget program instructions to buy the token in here
+    //   ComputeBudgetProgram.setComputeUnitPrice({
+    //     microLamports: ENV_SETTINGS.COMPUTE_PRICE,
+    //   })
+    // ];
 
-    const buySigners: Signer[] = [buyerWallet];
-    const buyBlockhash = await httpsConnectionForLP.getLatestBlockhash();
-    const newBuyTxMsg = new TransactionMessage({
-      payerKey: buyerWallet.publicKey,
-      recentBlockhash: buyBlockhash.blockhash,
-      instructions: buyInstructions,
-    }).compileToV0Message();
-    const versionedBuyMsg = new VersionedTransaction(newBuyTxMsg);
-    versionedBuyMsg.sign(buySigners);
+    // const buySigners: Signer[] = [buyerWallet];
+    // const buyBlockhash = await httpsConnectionForLP.getLatestBlockhash();
+    // const newBuyTxMsg = new TransactionMessage({
+    //   payerKey: buyerWallet.publicKey,
+    //   recentBlockhash: buyBlockhash.blockhash,
+    //   instructions: buyInstructions,
+    // }).compileToV0Message();
+    // const versionedBuyMsg = new VersionedTransaction(newBuyTxMsg);
+    // versionedBuyMsg.sign(buySigners);
     
-    // Bundle transactions using Jito
-    const randomEngineIndex = Math.floor(Math.random() * 5);
-    console.log(`random index of Jito engine: ${randomEngineIndex}`);
-    const bundleRes = await sendTxWithBundle(randomEngineIndex, [versionedLpMsg, versionedBuyMsg]);
+    // // Bundle transactions using Jito
+    // const randomEngineIndex = Math.floor(Math.random() * 5);
+    // console.log(`random index of Jito engine: ${randomEngineIndex}`);
+    // const bundleRes = await sendTxWithBundle(randomEngineIndex, [versionedLpMsg, versionedBuyMsg]);
 
-    if (!bundleRes) {
-      console.error("lp creation and buy token tx failed");
-      return null;
-    } else {
-      console.log(`bundle tx: ${bundleRes}`);
-      return {
-        pool: pool,
-        opentime: poolStartTime,
-        lpToken: initPoolInstruction.address.lpMint,
-      };
-    }
-
-    //Send Transaction of LP creation ----- Current
-    // const lpCreationRes = await httpsConnectionForLP.sendRawTransaction(
-    //   versionedLpMsg.serialize(),
-    //   { skipPreflight: false }
-    // );
-    // /*Confirmation*/
-    // const confirmation = await httpsConnection1.confirmTransaction({
-    //   signature: lpCreationRes,
-    //   lastValidBlockHeight: createLpBlockhash.lastValidBlockHeight,
-    //   blockhash: createLpBlockhash.blockhash,
-    // });
-    // /*Return pool, opening time and lp token information*/
-    // if (confirmation.value.err) {
-    //   console.error("lp creation is failed", confirmation.value.err);
+    // if (!bundleRes) {
+    //   console.error("lp creation and buy token tx failed");
     //   return null;
     // } else {
-    //   console.log(`pool creation tx: ${lpCreationRes}`);
-    //   console.log(`pool: ${pool.toString()}`);
-    //   console.log(`lp token: ${initPoolInstruction.address.lpMint.toString()}`);
+    //   console.log(`bundle tx: ${bundleRes}`);
     //   return {
     //     pool: pool,
     //     opentime: poolStartTime,
     //     lpToken: initPoolInstruction.address.lpMint,
     //   };
     // }
+
+    // Send Transaction of LP creation ----- Current
+    const lpCreationRes = await httpsConnectionForLP.sendRawTransaction(
+      versionedLpMsg.serialize(),
+      { skipPreflight: false }
+    );
+    /*Confirmation*/
+    const confirmation = await httpsConnection1.confirmTransaction({
+      signature: lpCreationRes,
+      lastValidBlockHeight: createLpBlockhash.lastValidBlockHeight,
+      blockhash: createLpBlockhash.blockhash,
+    });
+    /*Return pool, opening time and lp token information*/
+    if (confirmation.value.err) {
+      console.error("lp creation is failed", confirmation.value.err);
+      return null;
+    } else {
+      console.log(`pool creation tx: ${lpCreationRes}`);
+      console.log(`pool: ${pool.toString()}`);
+      console.log(`lp token: ${initPoolInstruction.address.lpMint.toString()}`);
+      return {
+        pool: pool,
+        opentime: poolStartTime,
+        lpToken: initPoolInstruction.address.lpMint,
+      };
+    }
 
 
     //Send Transaction of LP creation -------------- OLD
